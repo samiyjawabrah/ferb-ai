@@ -4,37 +4,51 @@ from torchvision import transforms
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-# from sklearn import train_test_split
+from sklearn.model_selection import train_test_split
 from PIL import Image
 import os
 
 IMG_WIDTH = 224
 IMG_HEIGHT = 224
 image_dict = { "Bathroom": 0, "Bedroom": 1, "DiningRoom": 2, "Kitchen": 3, "LivingRoom": 4 }
-
+LR = 0.0001
+EPOCHS = 5
+data_dir = '../data/House_Room_Dataset/'
 
 def main():
 
-  dataloader = DataLoader(load_data('../data/House_Room_Dataset/'), batch_size=32, shuffle=True)
+  dataset = load_data(data_dir)
+  train_data, val_data = train_test_split(dataset, train_size=0.8, test_size=0.2) 
 
-  train_transform = transforms.Compose([
-    transforms.RandomVerticalFlip(15),
-    transforms.ColorJitter(brightness=0.2),
-    transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) 
-  ])
+  train_dataloader = DataLoader(train_data, batch_size=32, shuffle=True)
+  val_dataloader = DataLoader(val_data, batch_size=32, shuffle=False)
+  
+  model =  models.resnet18(pretrained=True)
+  num_features = model.fc.in_features
+  model.fc = nn.Linear(num_features,5)
 
-  test_transform = transforms.Compoe([
+  criterion = nn.CrossEntropyLoss()
+  optimizer = optim.Adam(model.parameters(), lr=LR)
+
+  train_losses = []
+  
+  for epoch in range(EPOCHS):
+    for images, labels in train_dataloader:
+        
+        outputs = model(images)
+        loss = criterion(outputs,labels)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+      
+    print(f"Completed Epoch {epoch+1}/{EPOCHS}")
+
+  test_transform = transforms.Compose([
     transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
   ])
-
-
-
-  model =  models.resnet18(pretrained=True)
-
+      
   return
 
 
