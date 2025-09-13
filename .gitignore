@@ -2,3 +2,5 @@ data/
 .env
 scratch.py
 ./venv
+tests/
+src/njmls_images
