@@ -1,5 +1,6 @@
 from openai import OpenAI
 from dotenv import load_dotenv
+import json, time
 import os
 
 load_dotenv()
@@ -22,6 +23,17 @@ client = OpenAI(
   api_key=API_KEY
 )
 
+def safe_parse(output_text, retries=2):
+
+  for _ in range(retries):
+
+    try:
+      return json.loads(output_text)
+    except json.JSONDecodeError:
+      time.sleep(1)
+
+  return {"error": "Invalid JSON"}
+
 def image_condition_assessor(urls):
 
   property_image_assessments = []
@@ -37,6 +49,7 @@ def image_condition_assessor(urls):
             ]
         }],
       store=True,
+      response_format={"type":"json"}
     )
 
     property_image_assessments.append(response.output_text)
